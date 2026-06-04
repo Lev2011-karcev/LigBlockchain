@@ -13,4 +13,7 @@ struct Transaction{
     vector<uint8_t> sign;
     std::vector<uint8_t> serializeForSigning() const;
     std::vector<uint8_t> calculateHash() const;
+
+    bool signTransaction(const vector<uint8_t>& secretKey);
+    bool verifyTransactions() const;
 };
