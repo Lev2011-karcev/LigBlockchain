@@ -45,6 +45,6 @@ vector<uint8_t> newPublicKey(vector<uint8_t>& secretKey){
     size_t outLen = 33;
     secp256k1_ec_pubkey_serialize(ctx, serializedKey.data(), &outLen, &pubKey, SECP256K1_EC_COMPRESSED);
     secp256k1_context_destroy(ctx);
-    vector<uint8_t> PublicKey(serializedKey.begin()+ 1, serializedKey.begin() + 33);  
-    return PublicKey;
+    
+    return serializedKey;
 }
