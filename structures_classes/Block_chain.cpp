@@ -69,7 +69,7 @@ bool BlockChain::isValidChain() const {
             break;
         }
         bool tr = true;
-        for (Transaction tx : chain[i].transactions){
+        for (const Transaction& tx : chain[i].transactions){
             if (!tx.verifyTransactions()){
                 tr = false;
                 break;
