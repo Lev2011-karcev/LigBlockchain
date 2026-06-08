@@ -93,6 +93,49 @@ bool Transaction::signTransaction(const std::vector<uint8_t>& secretKey) {
 
     return true;
 }
+
+bool Transaction::verifyTransactions() const {
+    if (this->sign.size() != 64) return false;
+    if (this->sender.size() != 33) return false;
+
+    const secp256k1_context* ctx = secp256k1_context_static;
+
+    std::array<uint8_t, 32> x;
+    std::array<uint8_t, 32> s;
+    std::copy(this->sign.begin(), this->sign.begin() + 32, x.begin());
+    std::copy(this->sign.begin() + 32, this->sign.end(), s.begin());
+
+    secp256k1_pubkey P_point;
+    if (secp256k1_ec_pubkey_parse(ctx, &P_point, this->sender.data(), this->sender.size()) != 1) {
+        return false;
+    }
+
+    std::vector<uint8_t> txHash = calculateHash();
+
+    std::vector<uint8_t> e_buf;
+    e_buf.reserve(x.size() + sender.size() + txHash.size());
+    e_buf.insert(e_buf.end(), x.begin(), x.end());
+    e_buf.insert(e_buf.end(), sender.begin(), sender.end());
+    e_buf.insert(e_buf.end(), txHash.begin(), txHash.end());
+
+    std::array<uint8_t, 32> e;
+    picosha2::hash256(e_buf.begin(), e_buf.end(), e.begin(), e.end());
+
+    std::array<uint8_t, 32> e_neg = e;
+    if (secp256k1_ec_seckey_negate(ctx, e_neg.data()) != 1) return false;
+
+    if (secp256k1_ec_pubkey_tweak_mul(ctx, &P_point, e_neg.data()) != 1) return false;
+    if (secp256k1_ec_pubkey_tweak_add(ctx, &P_point, s.data()) != 1) return false;
+
+    std::array<uint8_t, 33> serializedR;
+    size_t len = serializedR.size();
+    if (secp256k1_ec_pubkey_serialize(ctx, serializedR.data(), &len, &P_point, SECP256K1_EC_COMPRESSED) != 1) {
+        return false;
+    }
+
+    return std::equal(x.begin(), x.end(), serializedR.begin() + 1);
+}
+
 /*
 это для работыс точками 
 secp256k1_pubkey R_point;
